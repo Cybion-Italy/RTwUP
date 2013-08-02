@@ -81,8 +81,9 @@ public class TwitterSpout extends BaseRichSpout {
 			public void onStatus(Status status) {
 				if(status.getURLEntities().length != 0) {
             		GeoLocation gl = status.getGeoLocation();
-            		if(gl == null || isInRange(gl,bbox))
+            		if(gl != null && isInRange(gl,bbox)) {
             			queue.add(status);
+                    }
 				}
 			}
 
