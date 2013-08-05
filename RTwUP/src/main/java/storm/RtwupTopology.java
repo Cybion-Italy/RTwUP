@@ -56,15 +56,15 @@ public class RtwupTopology {
 				e.printStackTrace();
 			}
 		} else {
+			conf.put("topN", 100);
+
             //rome
-//			conf.put("topN", 10);
 //			conf.put("sw0", 12.20);
 //			conf.put("sw1", 41.60);
 //			conf.put("ne0", 12.80);
 //			conf.put("ne1", 42.10);
 
             //italy 6.4,36.44,18.93,47.27
-            conf.put("topN", 100);
             conf.put("sw0", 6.4);
             conf.put("sw1", 36.44);
             conf.put("ne0", 18.93);

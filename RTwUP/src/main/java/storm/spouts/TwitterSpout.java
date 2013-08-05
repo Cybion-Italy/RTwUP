@@ -21,6 +21,7 @@ import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseRichSpout;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Values;
+import utils.BoundingBox;
 
 /** 
  * 
@@ -40,16 +41,18 @@ public class TwitterSpout extends BaseRichSpout {
     private LinkedBlockingQueue<Status> queue = null;
 	private SpoutOutputCollector collector;
 	private TwitterStream ts = null;
-	private double[][] bbox = null;
+    private BoundingBox observedRegion;
 
     @Override
 	public void open(Map conf, TopologyContext context,	SpoutOutputCollector collector) {
 
-		this.bbox = new double[2][2];
-		this.bbox[0][0] = (Double) conf.get("sw0");
-		this.bbox[0][1] = (Double) conf.get("sw1");
-		this.bbox[1][0] = (Double) conf.get("ne0");
-		this.bbox[1][1] = (Double) conf.get("ne1");
+		double[][] coordinates = new double[2][2];
+		coordinates[0][0] = (Double) conf.get("sw0");
+		coordinates[0][1] = (Double) conf.get("sw1");
+		coordinates[1][0] = (Double) conf.get("ne0");
+		coordinates[1][1] = (Double) conf.get("ne1");
+
+        this.observedRegion = new BoundingBox(coordinates);
 
 		this.queue = new LinkedBlockingQueue<Status>();
 		this.collector = collector;
@@ -59,16 +62,6 @@ public class TwitterSpout extends BaseRichSpout {
 		this.ts.setOAuthAccessToken(accessToken);
 
 		StatusListener listener = new StatusListener() {
-			
-			private boolean isInRange(GeoLocation gl, double[][] bbox) {
-				double[] sw = bbox[0];
-				double[] ne = bbox[1];
-				double latitude = gl.getLatitude();
-				double longitude = gl.getLongitude();
-				if((latitude>=sw[1] && latitude<=ne[1])&&(longitude>=sw[0] && longitude<=ne[0]))
-					return true;
-				return false;
-			}
 
             @Override
 			public void onException(Exception e) {
@@ -91,10 +84,13 @@ public class TwitterSpout extends BaseRichSpout {
             @Override
 			public void onStatus(Status status) {
 				if(status.getURLEntities().length != 0) {
-            		GeoLocation gl = status.getGeoLocation();
-                    LOGGER.info("status at location: " + gl.toString());
-            		if(gl != null && isInRange(gl, bbox)) {
-            			queue.add(status);
+            		final GeoLocation statusGl = status.getGeoLocation();
+
+                    LOGGER.info("status at location: " + statusGl.toString());
+
+                    if(statusGl != null && observedRegion.includes(statusGl)) {
+                        queue.add(status);
+                        LOGGER.info("status '" + status.getText() + "' is inside observed region");
                     }
 				}
 			}
@@ -108,7 +104,7 @@ public class TwitterSpout extends BaseRichSpout {
 
 		this.ts.addListener(listener);
 		FilterQuery query = new FilterQuery();
-		query.locations(this.bbox);
+		query.locations(observedRegion.getCoordinates());
 		this.ts.filter(query);
 	}
 
@@ -117,8 +113,9 @@ public class TwitterSpout extends BaseRichSpout {
 		try {
 			Status retrieve = queue.take();
 			URLEntity[] urls = retrieve.getURLEntities();
-			for (URLEntity url : urls)
+			for (URLEntity url : urls) {
 				this.collector.emit(new Values(url.getExpandedURL()));
+            }
 		} catch (InterruptedException e) {
 			LOGGER.error("ERRORE SULLO SPOUT: " + e.getMessage());
 		}
