@@ -7,8 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import storage.DomainPageCouple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class has a collection of all the URLs. It returns the stringified
@@ -19,7 +19,10 @@ import storage.DomainPageCouple;
  */
 public class PageDictionary {
 
-	private static PageDictionary instance;
+    private static final Logger LOGGER = LoggerFactory.getLogger(PageDictionary.class);
+
+    private static PageDictionary instance;
+
 	private Map<DomainPageCouple, Integer> dictionary;
 
 	private PageDictionary() {
@@ -27,8 +30,9 @@ public class PageDictionary {
 	}
 
 	public static synchronized PageDictionary getInstance() {
-		if (instance == null)
+		if (instance == null) {
 			instance = new PageDictionary();
+        }
 		return instance;
 	}
 

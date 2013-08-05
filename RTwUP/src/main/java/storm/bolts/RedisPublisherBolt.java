@@ -2,6 +2,8 @@ package storm.bolts;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -21,8 +23,9 @@ import backtype.storm.tuple.Tuple;
 
 public class RedisPublisherBolt extends BaseBasicBolt {
 
-	private static final long serialVersionUID = 1L;
-	private JedisPool pool = null;
+    private static final Logger LOGGER = LoggerFactory.getLogger(RedisPublisherBolt.class);
+    private static final long serialVersionUID = 1L;
+    private JedisPool pool = null;
 	private Jedis jedis = null;
 
 	private long topN;
@@ -39,8 +42,8 @@ public class RedisPublisherBolt extends BaseBasicBolt {
     @Override
 	public void execute(Tuple input, BasicOutputCollector collector) {
 				
-		String ranking = this.counts.getTopNelementsStringified(this.topN);
-		
+		final String ranking = this.counts.getTopNelementsStringified(this.topN);
+
 		this.jedis.publish("RTwUP", ranking);
 	}
 

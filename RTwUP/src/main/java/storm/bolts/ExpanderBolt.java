@@ -49,8 +49,7 @@ public class ExpanderBolt extends BaseBasicBolt {
 				connection.getHeaderFields();
 				newUrl= connection.getURL();
 			}
-			collector.emit(new Values(newUrl.getHost(), newUrl
-					.toString()));
+			collector.emit(new Values(newUrl.getHost(), newUrl.toString()));
 		} catch (MalformedURLException e) {
             LOGGER.error("" + e.getMessage());
 		} catch (IOException e) {

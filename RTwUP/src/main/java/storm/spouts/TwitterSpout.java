@@ -61,7 +61,7 @@ public class TwitterSpout extends BaseRichSpout {
 		AccessToken accessToken = new AccessToken("1546231212-TKDS2JM9sBp351uEuvnbn1VSPLR5mUKhZxwmfLr","8krjiVUEAoLvFrLC8ryw8iaU2PKTU80WHZaWevKGk2Y");
 		this.ts.setOAuthAccessToken(accessToken);
 
-		StatusListener listener = new StatusListener() {
+		final StatusListener listener = new StatusListener() {
 
             @Override
 			public void onException(Exception e) {
@@ -83,14 +83,13 @@ public class TwitterSpout extends BaseRichSpout {
 
             @Override
 			public void onStatus(Status status) {
-				if(status.getURLEntities().length != 0) {
-            		final GeoLocation statusGl = status.getGeoLocation();
 
-                    LOGGER.info("status at location: " + statusGl.toString());
+				if(status.getURLEntities().length != 0) {
+
+            		final GeoLocation statusGl = status.getGeoLocation();
 
                     if(statusGl != null && observedRegion.includes(statusGl)) {
                         queue.add(status);
-                        LOGGER.info("status '" + status.getText() + "' is inside observed region");
                     }
 				}
 			}
