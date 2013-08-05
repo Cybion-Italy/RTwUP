@@ -1,6 +1,8 @@
 package storm;
 
-import storm.bolts.ExpanderBolt; 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import storm.bolts.ExpanderBolt;
 import storm.bolts.RedisPublisherBolt;
 import storm.bolts.URLCounterBolt;
 import storm.spouts.TwitterSpout;
@@ -19,7 +21,9 @@ import backtype.storm.tuple.Fields;
  */
 public class RtwupTopology {
 
-	public static void main(String[] args) {
+    private static final Logger LOGGER = LoggerFactory.getLogger(RtwupTopology.class);
+
+    public static void main(String[] args) {
 		TopologyBuilder builder = new TopologyBuilder();
 
 		builder.setSpout("filteredStream", new TwitterSpout(), 1);
@@ -58,6 +62,7 @@ public class RtwupTopology {
 //			conf.put("sw1", 41.60);
 //			conf.put("ne0", 12.80);
 //			conf.put("ne1", 42.10);
+
             //italy 6.4,36.44,18.93,47.27
             conf.put("topN", 100);
             conf.put("sw0", 6.4);
@@ -65,14 +70,14 @@ public class RtwupTopology {
             conf.put("ne0", 18.93);
             conf.put("ne1", 47.27);
 			
-			try{
+			try {
 				LocalCluster cluster = new LocalCluster();
 				cluster.submitTopology("RTwUP", conf, builder.createTopology());
 				Utils.sleep(300000);
 				cluster.killTopology("RTwUP");
 				cluster.shutdown();
-			}catch (Exception e){
-				System.err.println("Error");
+			} catch (Exception e) {
+				LOGGER.error("Error " + e.getMessage());
 				e.printStackTrace();
 			}
 		}

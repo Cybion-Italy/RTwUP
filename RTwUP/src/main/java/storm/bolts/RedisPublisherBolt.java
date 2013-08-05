@@ -19,7 +19,7 @@ import backtype.storm.tuple.Tuple;
  *
  */
 
-public class RedisPublisherBolt extends BaseBasicBolt{
+public class RedisPublisherBolt extends BaseBasicBolt {
 
 	private static final long serialVersionUID = 1L;
 	private JedisPool pool = null;
@@ -35,7 +35,8 @@ public class RedisPublisherBolt extends BaseBasicBolt{
 		this.topN = (Long) conf.get("topN");
 		this.counts = PageDictionary.getInstance();
 	}
-	
+
+    @Override
 	public void execute(Tuple input, BasicOutputCollector collector) {
 				
 		String ranking = this.counts.getTopNelementsStringified(this.topN);
@@ -43,6 +44,7 @@ public class RedisPublisherBolt extends BaseBasicBolt{
 		this.jedis.publish("RTwUP", ranking);
 	}
 
+    @Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 	}
 

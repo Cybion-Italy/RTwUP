@@ -11,6 +11,8 @@ import backtype.storm.topology.base.BaseBasicBolt;
 import backtype.storm.tuple.Fields;
 import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This bolt expands the URL, if it is a shortned URL, until we retrieve the
@@ -24,12 +26,14 @@ public class ExpanderBolt extends BaseBasicBolt {
 
 	private static final long serialVersionUID = 1L;
 
-	/**
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExpanderBolt.class);
+
+    /**
 	 * Expand the URL. We use code by Andrew Thompson ({@link http://
 	 * stackoverflow.com/questions/10661337/expanding-a-shortened-url-to-its-original
 	 * -full-length-url-in-java}).
 	 */
-
+    @Override
 	public void execute(Tuple input, BasicOutputCollector collector) {
 		String url = input.getStringByField("url");
 		URL testingUrl;
@@ -48,12 +52,13 @@ public class ExpanderBolt extends BaseBasicBolt {
 			collector.emit(new Values(newUrl.getHost(), newUrl
 					.toString()));
 		} catch (MalformedURLException e) {
-
+            LOGGER.error("" + e.getMessage());
 		} catch (IOException e) {
-
+            LOGGER.error("" + e.getMessage());
 		}
 	}
 
+    @Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("expanded_url_domain", "expanded_url_complete"));
 	}

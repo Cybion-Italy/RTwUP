@@ -3,6 +3,8 @@ package storm.spouts;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import twitter4j.FilterQuery;
 import twitter4j.GeoLocation;
 import twitter4j.StallWarning;
@@ -33,11 +35,14 @@ public class TwitterSpout extends BaseRichSpout {
 
 	private static final long serialVersionUID = 1L;
 
-	private LinkedBlockingQueue<Status> queue = null;
+    private static final Logger LOGGER = LoggerFactory.getLogger(TwitterSpout.class);
+
+    private LinkedBlockingQueue<Status> queue = null;
 	private SpoutOutputCollector collector;
 	private TwitterStream ts = null;
 	private double[][] bbox = null;
 
+    @Override
 	public void open(Map conf, TopologyContext context,	SpoutOutputCollector collector) {
 
 		this.bbox = new double[2][2];
@@ -45,8 +50,7 @@ public class TwitterSpout extends BaseRichSpout {
 		this.bbox[0][1] = (Double) conf.get("sw1");
 		this.bbox[1][0] = (Double) conf.get("ne0");
 		this.bbox[1][1] = (Double) conf.get("ne1");
-		
-		
+
 		this.queue = new LinkedBlockingQueue<Status>();
 		this.collector = collector;
 		this.ts = new TwitterStreamFactory().getInstance();
@@ -66,28 +70,38 @@ public class TwitterSpout extends BaseRichSpout {
 				return false;
 			}
 
-			public void onException(Exception arg0) {
+            @Override
+			public void onException(Exception e) {
+                LOGGER.warn("listener exception: " + e.getMessage());
 			}
 
-			public void onDeletionNotice(StatusDeletionNotice arg0) {
+            @Override
+			public void onDeletionNotice(StatusDeletionNotice notice) {
 			}
 
+            @Override
 			public void onScrubGeo(long arg0, long arg1) {
 			}
 
-			public void onStallWarning(StallWarning arg0) {
+            @Override
+			public void onStallWarning(StallWarning warning) {
+                LOGGER.warn("stall warning: " + warning.getMessage());
 			}
 
+            @Override
 			public void onStatus(Status status) {
 				if(status.getURLEntities().length != 0) {
             		GeoLocation gl = status.getGeoLocation();
-            		if(gl != null && isInRange(gl,bbox)) {
+                    LOGGER.info("status at location: " + gl.toString());
+            		if(gl != null && isInRange(gl, bbox)) {
             			queue.add(status);
                     }
 				}
 			}
 
-			public void onTrackLimitationNotice(int arg0) {
+            @Override
+			public void onTrackLimitationNotice(int skippedStatuses) {
+                LOGGER.warn("track limit. skipped '" + skippedStatuses + "' statuses");
 			}
 
 		};
@@ -98,6 +112,7 @@ public class TwitterSpout extends BaseRichSpout {
 		this.ts.filter(query);
 	}
 
+    @Override
 	public void nextTuple() {
 		try {
 			Status retrieve = queue.take();
@@ -105,15 +120,17 @@ public class TwitterSpout extends BaseRichSpout {
 			for (URLEntity url : urls)
 				this.collector.emit(new Values(url.getExpandedURL()));
 		} catch (InterruptedException e) {
-			System.err.println("ERRORE SULLO SPOUT: " + e.getMessage());
+			LOGGER.error("ERRORE SULLO SPOUT: " + e.getMessage());
 		}
 
 	}
 
+    @Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declare(new Fields("url"));
 	}
 
+    @Override
 	public void close(){
 		this.ts.shutdown();
 	} 
